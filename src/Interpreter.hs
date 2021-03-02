@@ -29,7 +29,6 @@ data Err
 -- what evaluating the program does to the memory.
 interpret :: Program -> Memory -> Either Err Memory
 interpret [] mem = Right mem
--- might be a case with no memory?
 interpret (p:ps) mem = undefined
 
 current :: Stmt -> Memory -> Either Err Memory -- evaluates the current statement - pattern matches for different statement types
@@ -42,11 +41,15 @@ myLookup (VarE x) mem = case lookup x mem of
      Nothing -> Left UninitialisedMemory x
      Just y -> Right y-}
 
-eval :: Expr -> Memory -> Either Err Memory
+eval :: Expr -> Memory -> Either Err Int
 eval (ValE x) _ = Right x
-eval (VarE x) mem = (VarE x) mem = case lookup x mem of 
-     Nothing -> Left UninitialisedMemory x
+eval (VarE x) mem = case lookup x mem of 
+     Nothing -> Left $ UninitialisedMemory x
      Just y -> Right y
+eval (BinOpE Add x y) mem = do
+     x <- eval x mem
+     y <- eval y mem
+     return Right $ x + y
 
 -- FUNCTION TO CONVERT AN EITHER TO JUST AN INT
 
