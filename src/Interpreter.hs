@@ -33,7 +33,25 @@ interpret (p:ps) mem = current p mem >>= interpret ps
 
 current :: Stmt -> Memory -> Either Err Memory -- evaluates the current statement - pattern matches for different statement types
 --current [] mem = Right mem
-current (AssignStmt var ex) mem = editMemory var ex mem-- UNSURE
+current (AssignStmt var ex) mem = editMemory var ex mem
+--current (IfStmt _ [] _ _) mem = Right mem
+current (IfStmt x t [] f) mem =  eval x mem>>= \a -> if a /= 0 then interpret t mem else interpret f mem
+--current (IfStmt _ _ _ []) mem = Right mem
+--current (IfStmt _ _ [(_, [])] _) mem = Right mem
+current (IfStmt x t [(ex, e)] f) mem = eval x mem>>= \a -> if a /= 0 then interpret t mem else (eval ex mem >>= \b -> if b /= 0 then interpret e mem else interpret f mem)
+--current (RepeatStmt _ []) mem = Right mem
+--current (RepeatStmt ex xs) mem = eval ex mem >>= \a -> if a >= 0 then current (RepeatStmt (ValE $ a-1) xs) mem else Right mem
+current (RepeatStmt ex xs) mem = do
+     val <- eval ex mem
+     m <- interpret xs mem
+     if val <= 1 then Right m
+     else current (RepeatStmt (ValE $ val-1) xs) m
+{-
+do
+     a <- eval ex mem -- WORK FROM HERE    
+     if a <= 0 then 
+-}
+
 --current (IfStmt x (t:ts) [ex, (e:es)] (f:fs)) mem = eval a >>= \b -> if b /= 0 then eval t else (eval ex >>= \c -> if c /= 0 then eval e else eval f)
 --current (IfStmt Expr [Stmt] [(Expr, [Stmt])] [Stmt]) mem = undefined 
 --current (RepeatStmt Expr [Stmt]) mem = undefined
@@ -84,7 +102,7 @@ eval (BinOpE Div a b) mem = do
 eval (BinOpE Pow a b) mem = do
      x <- eval a mem
      y <- eval b mem
-     return $ x ^ y
+     if y < 0 then Left NegativeExponentError else Right (x ^ y)
 eval (BinOpE Equal a b) mem = do
      x <- eval a mem
      y <- eval b mem
