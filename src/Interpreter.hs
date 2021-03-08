@@ -3,6 +3,7 @@
 -- Coursework 2: Scratch clone                                                --
 --------------------------------------------------------------------------------
 
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Interpreter where
 
 --------------------------------------------------------------------------------
@@ -41,7 +42,6 @@ current (RepeatStmt ex xs) mem = do
      if val <= 1 then Right m
      else current (RepeatStmt (ValE $ val-1) xs) m
 
-
 editMemory :: String -> Expr -> Memory -> Either Err Memory
 editMemory s x mem = eval x mem >>= \val -> case lookup s mem of -- BINDING GETS RID OF EITHER
      Nothing -> Right $ (s, val):mem
@@ -65,23 +65,25 @@ eval (ValE x) _ = Right x
 eval (VarE x) mem = case lookup x mem of
      Nothing -> Left $ UninitialisedMemory x
      Just y -> Right y
-eval (BinOpE Add a b) mem = subEval (+) a b mem
-eval (BinOpE Sub a b) mem = subEval (-) a b mem
-eval (BinOpE Mul a b) mem = subEval (*) a b mem
-eval (BinOpE Div a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     x `safediv` y
-eval (BinOpE Pow a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     if y < 0 then Left NegativeExponentError else Right (x ^ y)
-eval (BinOpE Equal a b) mem = subEvalBin (==) a b mem
-eval (BinOpE Neq a b) mem = subEvalBin (/=) a b mem
-eval (BinOpE LessThan  a b) mem = subEvalBin (<) a b mem
-eval (BinOpE LessOrEqual a b) mem = subEvalBin (<=) a b mem
-eval (BinOpE GreaterThan  a b) mem = subEvalBin (>) a b mem
-eval (BinOpE GreaterOrEqual a b) mem = subEvalBin (>=) a b mem
+eval (BinOpE f a b) mem = case f of
+     Add -> subEval (+) a b mem
+     Sub -> subEval (-) a b mem
+     Mul -> subEval (*) a b mem
+     Div -> do
+          x <- eval a mem
+          y <- eval b mem
+          x `safediv` y
+     Pow -> do
+          x <- eval a mem
+          y <- eval b mem
+          if y < 0 then Left NegativeExponentError else Right (x ^ y)
+     Equal -> subEvalBin (==) a b mem
+     Neq -> subEvalBin (/=) a b mem
+     LessThan -> subEvalBin (<) a b mem
+     LessOrEqual -> subEvalBin (<=) a b mem
+     GreaterThan -> subEvalBin (>) a b mem
+     GreaterOrEqual -> subEvalBin (>=) a b mem
+
 
 subEval :: (Int -> Int -> Int) -> Expr -> Expr -> Memory -> Either Err Int
 subEval f a b mem = do
