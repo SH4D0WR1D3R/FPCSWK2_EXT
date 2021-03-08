@@ -29,32 +29,18 @@ data Err
 -- what evaluating the program does to the memory.
 interpret :: Program -> Memory -> Either Err Memory
 interpret [] mem = Right mem
-interpret (p:ps) mem = current p mem >>= interpret ps 
+interpret (p:ps) mem = current p mem >>= interpret ps
 
 current :: Stmt -> Memory -> Either Err Memory -- evaluates the current statement - pattern matches for different statement types
---current [] mem = Right mem
 current (AssignStmt var ex) mem = editMemory var ex mem
---current (IfStmt _ [] _ _) mem = Right mem
 current (IfStmt x t [] f) mem =  eval x mem>>= \a -> if a /= 0 then interpret t mem else interpret f mem
---current (IfStmt _ _ _ []) mem = Right mem
---current (IfStmt _ _ [(_, [])] _) mem = Right mem
-current (IfStmt x t [(ex, e)] f) mem = eval x mem>>= \a -> if a /= 0 then interpret t mem else (eval ex mem >>= \b -> if b /= 0 then interpret e mem else interpret f mem)
---current (RepeatStmt _ []) mem = Right mem
---current (RepeatStmt ex xs) mem = eval ex mem >>= \a -> if a >= 0 then current (RepeatStmt (ValE $ a-1) xs) mem else Right mem
+current (IfStmt x t [(ex, e)] f) mem = eval x mem>>= \a -> if a /= 0 then interpret t mem else eval ex mem >>= \b -> if b /= 0 then interpret e mem else interpret f mem
 current (RepeatStmt ex xs) mem = do
      val <- eval ex mem
      m <- interpret xs mem
      if val <= 1 then Right m
      else current (RepeatStmt (ValE $ val-1) xs) m
-{-
-do
-     a <- eval ex mem -- WORK FROM HERE    
-     if a <= 0 then 
--}
 
---current (IfStmt x (t:ts) [ex, (e:es)] (f:fs)) mem = eval a >>= \b -> if b /= 0 then eval t else (eval ex >>= \c -> if c /= 0 then eval e else eval f)
---current (IfStmt Expr [Stmt] [(Expr, [Stmt])] [Stmt]) mem = undefined 
---current (RepeatStmt Expr [Stmt]) mem = undefined
 
 editMemory :: String -> Expr -> Memory -> Either Err Memory
 editMemory s x mem = eval x mem >>= \val -> case lookup s mem of -- BINDING GETS RID OF EITHER
@@ -65,36 +51,23 @@ replaceMemory :: String -> Int -> Memory -> Memory
 replaceMemory _ _ [] = []
 replaceMemory s i (m:ms)
     | fst m == s = (s, i):ms
-    | otherwise = m:(replaceMemory s i ms)
+    | otherwise = m:replaceMemory s i ms
 
-{-myLookup :: Expr -> Memory -> Either Err Int
-myLookup (VarE x) mem = case lookup x mem of 
-     Nothing -> Left UninitialisedMemory x
-     Just y -> Right y-}
 
 safediv :: Int -> Int -> Either Err Int
 safediv _ 0 = Left DivByZeroError
 safediv x y = Right $ x `div` y
 
 -- WANT LOOKUP TO WORK ON EITHER TYPE TO MAKE IT WORK FOR MEMORY
-
+-- case statement to reduce length of lines
 eval :: Expr -> Memory -> Either Err Int
 eval (ValE x) _ = Right x
-eval (VarE x) mem = case lookup x mem of 
+eval (VarE x) mem = case lookup x mem of
      Nothing -> Left $ UninitialisedMemory x
      Just y -> Right y
-eval (BinOpE Add a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ x + y -- SPLIT UP BIN OP PATTERN MATCHING TO SEPARATE FUNCTION
-eval (BinOpE Sub a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ x - y
-eval (BinOpE Mul a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ x * y
+eval (BinOpE Add a b) mem = subEval (+) a b mem
+eval (BinOpE Sub a b) mem = subEval (-) a b mem
+eval (BinOpE Mul a b) mem = subEval (*) a b mem
 eval (BinOpE Div a b) mem = do
      x <- eval a mem
      y <- eval b mem
@@ -103,62 +76,27 @@ eval (BinOpE Pow a b) mem = do
      x <- eval a mem
      y <- eval b mem
      if y < 0 then Left NegativeExponentError else Right (x ^ y)
-eval (BinOpE Equal a b) mem = do
+eval (BinOpE Equal a b) mem = subEvalBin (==) a b mem
+eval (BinOpE Neq a b) mem = subEvalBin (/=) a b mem
+eval (BinOpE LessThan  a b) mem = subEvalBin (<) a b mem
+eval (BinOpE LessOrEqual a b) mem = subEvalBin (<=) a b mem
+eval (BinOpE GreaterThan  a b) mem = subEvalBin (>) a b mem
+eval (BinOpE GreaterOrEqual a b) mem = subEvalBin (>=) a b mem
+
+subEval :: (Int -> Int -> Int) -> Expr -> Expr -> Memory -> Either Err Int
+subEval f a b mem = do
      x <- eval a mem
      y <- eval b mem
-     return $ (if x == y then 1 else 0)
-eval (BinOpE Neq a b) mem = do
+     return (f x y)
+
+subEvalBin :: (Int -> Int -> Bool) -> Expr -> Expr -> Memory -> Either Err Int
+subEvalBin f a b mem = do
      x <- eval a mem
      y <- eval b mem
-     return $ (if x /= y then 1 else 0)
-eval (BinOpE LessThan  a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ (if x < y then 1 else 0)
-eval (BinOpE LessOrEqual a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ (if x <= y then 1 else 0)
-eval (BinOpE GreaterThan  a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ (if x > y then 1 else 0)
-eval (BinOpE GreaterOrEqual a b) mem = do
-     x <- eval a mem
-     y <- eval b mem
-     return $ (if x >= y then 1 else 0)
+     return (if f x y then 1 else 0)
 
 
 -- FUNCTION TO CONVERT AN EITHER TO JUST AN INT
 
---evalBin :: Op -> Expr -> Expr 
---evalBin 
-
-
-
-
-
-
-
-
-{-eval :: Expr -> Memory -> Maybe Int
-eval (ValE x) _ = Just x
---evalBin (VarE x) (m:ms) = if fst m == then snd m else evalBin (VarE x) ms
-eval (VarE x) mem = lookup x mem
-eval (BinOpE o a b) mem = Just (operation o (eval a mem) (eval b mem))
-
-operation :: Op -> Maybe Int -> Maybe Int -> Int
-operation Add (Just x) (Just y) = x + y
-operation Sub (Just x) (Just y) = x - y
-operation Mul (Just x) (Just y) = x * y
-operation Div (Just x) (Just y) = x / y
-operation Pow (Just x) (Just y) = x ^ y
-operation Equal (Just x) (Just y) = if x == y then 1 else 0
-operation Neq (Just x) (Just y) = if x /= y then 1 else 0
-operation LessThan (Just x) (Just y) = if x < y then 1 else 0
-operation LessOrEqual (Just x) (Just y) = if x <= y then 1 else 0
-operation GreaterThan (Just x) (Just y) = if x > y then 1 else 0
-operation GreaterOrEqual (Just x) (Just y)  = if x >= y then 1 else 0
--}
 
 --------------------------------------------------------------------------------
