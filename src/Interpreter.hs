@@ -32,10 +32,20 @@ interpret :: Program -> Memory -> Either Err Memory
 interpret [] mem = Right mem
 interpret (p:ps) mem = current p mem >>= interpret ps
 
-current :: Stmt -> Memory -> Either Err Memory -- evaluates the current statement - pattern matches for different statement types
+-- | Given a statement and the memory contents, the function outputs the new
+-- updated contents of the memory.
+-- The function pattern matches against the different statement inputs and 
+-- evaluates each statement accordingly.
+current :: Stmt -> Memory -> Either Err Memory
 current (AssignStmt var ex) mem = editMemory var ex mem
 current (IfStmt x t [] f) mem =  eval x mem>>= \a -> if a /= 0 then interpret t mem else interpret f mem
 current (IfStmt x t [(ex, e)] f) mem = eval x mem>>= \a -> if a /= 0 then interpret t mem else eval ex mem >>= \b -> if b /= 0 then interpret e mem else interpret f mem
+{-current (IfStmt x t [(ex, e)] f) mem = do
+     a <- eval x mem
+     b <- eval ex mem
+     if a /= 0 then interpret t mem else b
+     if b /= 0 then interpret e mem else interpret f mem-}
+
 current (RepeatStmt ex xs) mem = do
      val <- eval ex mem
      m <- interpret xs mem
@@ -53,13 +63,6 @@ replaceMemory s i (m:ms)
     | fst m == s = (s, i):ms
     | otherwise = m:replaceMemory s i ms
 
-
-safediv :: Int -> Int -> Either Err Int
-safediv _ 0 = Left DivByZeroError
-safediv x y = Right $ x `div` y
-
--- WANT LOOKUP TO WORK ON EITHER TYPE TO MAKE IT WORK FOR MEMORY
--- case statement to reduce length of lines
 eval :: Expr -> Memory -> Either Err Int
 eval (ValE x) _ = Right x
 eval (VarE x) mem = case lookup x mem of
@@ -84,7 +87,6 @@ eval (BinOpE f a b) mem = case f of
      GreaterThan -> subEvalBin (>) a b mem
      GreaterOrEqual -> subEvalBin (>=) a b mem
 
-
 subEval :: (Int -> Int -> Int) -> Expr -> Expr -> Memory -> Either Err Int
 subEval f a b mem = do
      x <- eval a mem
@@ -97,8 +99,8 @@ subEvalBin f a b mem = do
      y <- eval b mem
      return (if f x y then 1 else 0)
 
-
--- FUNCTION TO CONVERT AN EITHER TO JUST AN INT
-
+safediv :: Int -> Int -> Either Err Int
+safediv _ 0 = Left DivByZeroError
+safediv x y = Right $ x `div` y
 
 --------------------------------------------------------------------------------
