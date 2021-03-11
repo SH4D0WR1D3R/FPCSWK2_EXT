@@ -120,4 +120,9 @@ safediv :: Int -> Int -> Either Err Int
 safediv _ 0 = Left DivByZeroError
 safediv x y = Right $ x `div` y
 
+-- EXTENSION IDEAS
+-- RANDOM NUMBER GENERATOR
+-- WHILE LOOP
+-- AND, OR, NOT
+
 --------------------------------------------------------------------------------
