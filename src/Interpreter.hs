@@ -80,6 +80,15 @@ current (RepeatStmt ex xs) mem = do
 -- else, it is added to the beginning of the memory store - more efficient to use cons
 -- rather than ++, which runs through the whole list to add to the end.
 >>>>>>> ac3738fdcadd78475b241a8334b4600e7fcba854
+-- | This is called when assigning variables, and is called when there is an AssignStmt. This checks the memory to see if there is already a variable with that name to update.
+-- There are 2 cases for evaluating the expression passed in, evaluating to Nothing - which will just add the value to the start of the memory, or Just "something" which means there is a value to update.
+-- When there is a value to update, there is a replaceMemory function which is called to update the value accordingly. Lookup is used to check if there is the value we are looking for in memory - an inbuilt function.
+=======
+-- | This helper function is used when variable assignment takes place, and updates the
+-- memory accordingly. If the variable already exists in memory, that value is updated,
+-- else, it is added to the beginning of the memory store - more efficient to use cons
+-- rather than ++, which runs through the whole list to add to the end.
+
 editMemory :: String -> Expr -> Memory -> Either Err Memory
 editMemory s x mem = eval x mem >>= \val -> case lookup s mem of -- BINDING GETS RID OF EITHER
      Nothing -> Right $ (s, val):mem
@@ -93,6 +102,13 @@ editMemory s x mem = eval x mem >>= \val -> case lookup s mem of -- BINDING GETS
 -- It updates the pair value stored in memory, and keeps it in the same position as
 -- it was.
 >>>>>>> ac3738fdcadd78475b241a8334b4600e7fcba854
+-- | This is used to update the value in memory. The pattern matching for an empty memory will just return an empty memory since there isn't anything to update. Else, the memory is ran through and each fst of each pair
+-- is checked. If the element equals what we are searching for, the pair is updated. Else, it is looped through until either the element is found, or we are left with an empty list which will just return an empty list.
+=======
+-- | This is called when there is a value in memory with that variable name already.
+-- It updates the pair value stored in memory, and keeps it in the same position as
+-- it was.
+
 replaceMemory :: String -> Int -> Memory -> Memory
 replaceMemory _ _ [] = []
 replaceMemory s i (m:ms)
