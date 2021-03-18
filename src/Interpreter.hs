@@ -72,6 +72,12 @@ current (RepeatStmt ex xs) mem = do
      if val <= 1 then Right m
      else current (RepeatStmt (ValE $ val-1) xs) m
 
+current (WhileStmt x xs) mem = do
+     expr <- eval x mem
+     m <- interpret xs mem
+     if expr == 1 then current (WhileStmt x xs) m
+     else Right m
+
 -- | Given a @string@, @expr@ and @memory@, the @memory@ is searched to
 -- see if the given variable name already exists. This makes use of lookup, which
 -- is an inbuilt function that returns a Maybe. If something is found, then
@@ -152,6 +158,9 @@ safediv x y = Right $ x `div` y
 -- EXTENSION IDEAS
 -- RANDOM NUMBER GENERATOR
 -- WHILE LOOP
+-- REPEAT UNTIL
 -- AND, OR, NOT
+
+
 
 --------------------------------------------------------------------------------

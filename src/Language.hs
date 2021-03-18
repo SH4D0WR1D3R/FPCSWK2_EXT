@@ -27,6 +27,10 @@ data Stmt
         repeatTimesExpr :: Expr,
         repeatBody      :: [Stmt]
     }
+    | WhileStmt {
+        whileExpr :: Expr,
+        whileBody :: [Stmt]
+    }
     deriving Show
 
 --------------------------------------------------------------------------------
