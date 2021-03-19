@@ -183,6 +183,9 @@ tests = localOption (Timeout (5*1000000) "5s") $ testGroup "Interpreter.interpre
              === Left NegativeExponentError
         .&&. interpret [RepeatStmt (ValE 10) [AssignStmt "y" (VarE "x")]] []
              === Left (UninitialisedMemory "x")
+    ,   QC.testProperty "implements while" $ \(Positive n) ->
+            hasMemory [("x", n)] $ interpret (whileTest n 0) [("x", 2)] 
+
     ,   QC.testProperty "implements if" $ \(Positive n) ->
         hasMemory [("x",n)] $ interpret (ifTest (ValE 0) n) [("x", 0)]
     ,   QC.testProperty "if condition can contain arbitrary expressions" $ \(Positive n) expr ->
