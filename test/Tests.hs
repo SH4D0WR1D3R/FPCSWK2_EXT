@@ -73,6 +73,15 @@ repeatArbitraryTest expr =
         [ AssignStmt "x" (BinOpE Add (VarE "x") (ValE 1)) ]
     ]
 
+
+whileTest :: Int -> Int -> Program
+whileTest n m =
+    [   AssignStmt "n" (ValE n),
+        WhileStmt (BinOpE Equal (VarE "n") (ValE m))
+        [ AssignStmt "x" (BinOpE Add (ValE n) (ValE m)), 
+        AssignStmt "n" (BinOpE Sub (VarE "n") (ValE 1)) ]
+    ]
+
 -- | Constructs a test for if statements.
 rawIfTest :: Expr -> Int -> Program
 rawIfTest expr n =
