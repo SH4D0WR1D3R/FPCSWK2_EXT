@@ -22,6 +22,8 @@ data Err
                                         -- exponent was attempted.
     | UninitialisedMemory String        -- ^ Tried to read from a variable
                                         -- that does not exist.
+    | IncorrectExpression               -- ^ Tried applying an expression 
+                                        -- that shouldn't be applied.
     deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -72,6 +74,8 @@ current (RepeatStmt ex xs) mem = do
      if val <= 1 then Right m
      else current (RepeatStmt (ValE $ val-1) xs) m
 
+current (WhileStmt (ValE _) _) _ = Left IncorrectExpression
+current (WhileStmt (VarE _) _) _ = Left IncorrectExpression
 current (WhileStmt x xs) mem = do
      expr <- eval x mem
      m <- interpret xs mem

@@ -185,6 +185,9 @@ tests = localOption (Timeout (5*1000000) "5s") $ testGroup "Interpreter.interpre
              === Left (UninitialisedMemory "x")
     ,   QC.testProperty "implements while" $ \(Positive n) ->
             hasMemory [("x", n)] $ interpret (whileTest n 0) [("x", 2)] 
+    ,   QC.testProperty "while correctly handles exceptions in condition" $ \(x :: Int) ->
+            interpret [WhileStmt (ValE 5) [AssignStmt "x" (BinOpE Sub (VarE "x") (ValE 1))]] []
+            === Left IncorrectExpression
 
     ,   QC.testProperty "implements if" $ \(Positive n) ->
         hasMemory [("x",n)] $ interpret (ifTest (ValE 0) n) [("x", 0)]
