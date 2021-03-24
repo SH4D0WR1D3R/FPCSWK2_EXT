@@ -55,6 +55,11 @@ data Expr
     = ValE Int
     | VarE String
     | BinOpE Op Expr Expr
+    | BitOpE BitWise Expr Expr
     deriving Show
 
+data BitWise
+    = And
+    | Or
+    deriving Show
 --------------------------------------------------------------------------------
