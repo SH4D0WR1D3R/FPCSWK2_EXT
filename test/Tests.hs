@@ -24,7 +24,7 @@ instance Arbitrary Op where
     arbitrary = elements [minBound..maxBound]
 
 safeOps :: [Op]
-safeOps = [op | op <- [minBound..maxBound], op /= Div, op /= Pow]
+safeOps = [op | op <- [minBound..maxBound], op /= Div, op /= Pow, op /= Mod]
 
 instance Arbitrary Expr where
     arbitrary = resize 10 $ sized arbExpr

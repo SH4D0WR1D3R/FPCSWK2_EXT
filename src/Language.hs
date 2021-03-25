@@ -42,7 +42,7 @@ data Op
     | Mul                               -- ^ The * operator.
     | Div                               -- ^ The / operator.
     | Pow                               -- ^ The power of operator.
---    | Mod
+    | Mod
     | Equal                             -- ^ The == operator.
     | Neq                               -- ^ The /= operator.
     | LessThan                          -- ^ The < operator.

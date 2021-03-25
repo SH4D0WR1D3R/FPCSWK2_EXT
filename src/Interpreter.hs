@@ -24,6 +24,7 @@ data Err
                                         -- that does not exist.
     | IncorrectExpression               -- ^ Tried applying an expression 
                                         -- that shouldn't be applied.
+    | ModByZeroError                    -- ^ Mod by zero was attempted.
     deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -132,7 +133,10 @@ eval (BinOpE f a b) mem = case f of
           x <- eval a mem
           y <- eval b mem
           if y < 0 then Left NegativeExponentError else Right (x ^ y)
---     Mod -> subEval mod a b mem
+     Mod -> do
+          x <- eval a mem
+          y <- eval b mem
+          x `safemod` y
      Equal -> subEvalBin (==) a b mem
      Neq -> subEvalBin (/=) a b mem
      LessThan -> subEvalBin (<) a b mem
@@ -179,6 +183,11 @@ evalBin Xor a b
 safediv :: Int -> Int -> Either Err Int
 safediv _ 0 = Left DivByZeroError
 safediv x y = Right $ x `div` y
+
+safemod :: Int -> Int -> Either Err Int
+safemod _ 0 = Left ModByZeroError
+--safemod x y mem = mod <$> eval x mem <*> eval y mem
+safemod x y = Right $ x `mod` y
 
 -- EXTENSION IDEAS
 -- RANDOM NUMBER GENERATOR
