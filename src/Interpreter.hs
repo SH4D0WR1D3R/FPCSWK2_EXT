@@ -132,6 +132,7 @@ eval (BinOpE f a b) mem = case f of
           x <- eval a mem
           y <- eval b mem
           if y < 0 then Left NegativeExponentError else Right (x ^ y)
+--     Mod -> subEval mod a b mem
      Equal -> subEvalBin (==) a b mem
      Neq -> subEvalBin (/=) a b mem
      LessThan -> subEvalBin (<) a b mem
@@ -159,20 +160,19 @@ subEvalBin f a b mem = do
      return (if f x y then 1 else 0)
 
 evalBin :: BitWise -> Int -> Int -> Either Err Int
-evalBin And a b = if a /= 0 && b /= 0 then Right 1 else Right 0
-evalBin Or a b = if a /= 0 || b /= 0 then Right 1 else Right 0
+--evalBin And a b = if a /= 0 && b /= 0 then Right 1 else Right 0
+evalBin And a b
+    | a /= 0 && b /= 0 = Right 1
+    | otherwise = Right 0
+--evalBin Or a b = if a /= 0 || b /= 0 then Right 1 else Right 0
+evalBin Or a b
+    | a /= 0 || b /= 0 = Right 1
+    | otherwise = Right 0
+--evalBin Xor a b = if (a /= 0 && b /= 0) || (a == b && b == 0) then Right 1 else Right 0
+evalBin Xor a b
+    | (a /= 0 && b /= 0) || (a == b && b == 0) = Right 1
+    | otherwise = Right 0
 -- WRITE TESTS!!!!!!!!!!
-     
-{-evalBin :: (Int -> Int -> Bool) -> Expr -> Expr -> Memory -> Bool 
-evalBin f x y mem = do
-     a <- eval x mem
-     b <- eval y mem
-     f a b-}
-
--- TRYING TO CHANGE UP TO MAKE EASIER TO IMPLEMENT AND, OR AND NOT
-
---subEvalBit :: (Int -> Int -> Bool) -> Expr -> Expr -> Memory -> Either Err Int
---subEvalBit And x y mem = 
 
 -- | This function ensures there is no accidental divide by zero error. The DivBZeroError is returned
 -- when this occurs, and the program handles it correctly.

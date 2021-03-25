@@ -160,6 +160,27 @@ tests = localOption (Timeout (5*1000000) "5s") $ testGroup "Interpreter.interpre
     ,   QC.testProperty "handles negative exponents in assignments" $ \(x :: Int) ->
         interpret [AssignStmt "x" (BinOpE Pow (ValE x) (ValE (-1)))] []
         === Left NegativeExponentError
+    ,   QC.testProperty "correctly calculates and statement" $ \(x :: Int) ->
+        interpret [AssignStmt "x" (BitOpE And (ValE 1) (ValE 0))] []
+        === Right [("x", 0)]
+        .&&. interpret [AssignStmt "x" (BitOpE And (ValE 1) (ValE 1))] []
+        === Right [("x", 1)]
+        .&&. interpret [AssignStmt "x" (BitOpE And (ValE 0) (ValE 0))] []
+        === Right [("x", 0)]
+    ,   QC.testProperty "correctly calculates or statement" $ \(x :: Int) ->
+        interpret [AssignStmt "x" (BitOpE Or (ValE 1) (ValE 0))] []
+        === Right [("x", 1)]
+        .&&. interpret [AssignStmt "x" (BitOpE Or (ValE 1) (ValE 1))] []
+        === Right [("x", 1)]
+        .&&. interpret [AssignStmt "x" (BitOpE Or (ValE 0) (ValE 0))] []
+        === Right [("x", 0)]
+    ,   QC.testProperty "correctly calculates xor statement" $ \(x :: Int) ->
+        interpret [AssignStmt "x" (BitOpE Xor (ValE 1) (ValE 0))] []
+        === Right [("x", 0)]
+        .&&. interpret [AssignStmt "x" (BitOpE Xor (ValE 1) (ValE 1))] []
+        === Right [("x", 1)]
+        .&&. interpret [AssignStmt "x" (BitOpE Xor (ValE 0) (ValE 0))] []
+        === Right [("x", 1)]
     ,   testCase "handles uninitialised memory in assignments" $
         interpret [AssignStmt "y" (VarE "x")] []
         @?= Left (UninitialisedMemory "x")

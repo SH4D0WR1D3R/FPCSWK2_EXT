@@ -42,6 +42,7 @@ data Op
     | Mul                               -- ^ The * operator.
     | Div                               -- ^ The / operator.
     | Pow                               -- ^ The power of operator.
+--    | Mod
     | Equal                             -- ^ The == operator.
     | Neq                               -- ^ The /= operator.
     | LessThan                          -- ^ The < operator.
@@ -61,5 +62,6 @@ data Expr
 data BitWise
     = And
     | Or
+    | Xor
     deriving Show
 --------------------------------------------------------------------------------
