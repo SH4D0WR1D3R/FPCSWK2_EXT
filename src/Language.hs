@@ -31,6 +31,10 @@ data Stmt
         whileExpr :: Expr,
         whileBody :: [Stmt]
     }
+    | UntilStmt {
+        untilExpr :: Expr,
+        untilBody :: [Stmt]
+    }
     deriving Show
 
 --------------------------------------------------------------------------------

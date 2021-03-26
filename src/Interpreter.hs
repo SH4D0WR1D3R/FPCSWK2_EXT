@@ -74,7 +74,9 @@ current (RepeatStmt ex xs) mem = do
      m <- interpret xs mem
      if val <= 1 then Right m
      else current (RepeatStmt (ValE $ val-1) xs) m
-
+-- | Given a @WhileStmt@, the expression provided is evaluated if it isn't a VarE or ValE. 
+-- If the expression evaluates to false, the current memory is returned. Else,
+-- the memory is updated and the @WhileStmt@ is run again.
 current (WhileStmt (ValE _) _) _ = Left IncorrectExpression
 current (WhileStmt (VarE _) _) _ = Left IncorrectExpression
 current (WhileStmt x xs) mem = do
@@ -83,7 +85,17 @@ current (WhileStmt x xs) mem = do
      else do
          m <- interpret xs mem
          current (WhileStmt x xs) m
-
+-- | Given a @UntilStmt@, the expression provided is evaluated if it isn't a VarE or ValE. 
+-- If the expression evaluates to true, the current memory is returned. Else,
+-- the memory is updated and the @UntilStmt@ is run again.
+current (UntilStmt (ValE _) _) _ = Left IncorrectExpression
+current (UntilStmt (VarE _) _) _ = Left IncorrectExpression
+current (UntilStmt x xs) mem = do
+     expr <- eval x mem
+     if expr /= 0 then Right mem
+     else do
+          m <- interpret xs mem
+          current (UntilStmt x xs) m
 
 -- | Given a @string@, @expr@ and @memory@, the @memory@ is searched to
 -- see if the given variable name already exists. This makes use of lookup, which
@@ -136,12 +148,13 @@ eval (BinOpE f a b) mem = case f of
      LessOrEqual -> subEvalBin (<=) a b mem
      GreaterThan -> subEvalBin (>) a b mem
      GreaterOrEqual -> subEvalBin (>=) a b mem
-
+-- | Given a @BitOpE@, the expressions passed in are evaluated together using an operator.
+-- @evalBin@ is used to perform bitwise operations, such as and, or, xor.
 eval (BitOpE f a b) mem = do
      x <- eval a mem
      y <- eval b mem
      evalBin f x y
-
+-- | Given a @NotE@, the expression passed in is evaluated, and the value is reversed accordingly.
 eval (NotE a) mem = do
      x <- eval a mem
      return (if x /= 0 then 0 else 1)
