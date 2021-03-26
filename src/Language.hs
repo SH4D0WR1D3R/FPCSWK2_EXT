@@ -57,8 +57,10 @@ data Expr
     | VarE String
     | BinOpE Op Expr Expr
     | BitOpE BitWise Expr Expr
+    | NotE Expr
     deriving Show
 
+-- | BitWise expressions
 data BitWise
     = And
     | Or

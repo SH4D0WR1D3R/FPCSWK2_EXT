@@ -79,9 +79,11 @@ current (WhileStmt (ValE _) _) _ = Left IncorrectExpression
 current (WhileStmt (VarE _) _) _ = Left IncorrectExpression
 current (WhileStmt x xs) mem = do
      expr <- eval x mem
-     m <- interpret xs mem
-     if expr == 1 then current (WhileStmt x xs) m
-     else Right m
+     if expr == 0 then Right mem
+     else do
+         m <- interpret xs mem
+         current (WhileStmt x xs) m
+
 
 -- | Given a @string@, @expr@ and @memory@, the @memory@ is searched to
 -- see if the given variable name already exists. This makes use of lookup, which
@@ -125,18 +127,9 @@ eval (BinOpE f a b) mem = case f of
      Add -> subEval (+) a b mem
      Sub -> subEval (-) a b mem
      Mul -> subEval (*) a b mem
-     Div -> do
-          x <- eval a mem
-          y <- eval b mem
-          x `safediv` y
-     Pow -> do
-          x <- eval a mem
-          y <- eval b mem
-          if y < 0 then Left NegativeExponentError else Right (x ^ y)
-     Mod -> do
-          x <- eval a mem
-          y <- eval b mem
-          x `safemod` y
+     Div -> subEval' safediv a b mem
+     Pow -> subEval' safepow a b mem
+     Mod -> subEval' safemod a b mem
      Equal -> subEvalBin (==) a b mem
      Neq -> subEvalBin (/=) a b mem
      LessThan -> subEvalBin (<) a b mem
@@ -149,12 +142,21 @@ eval (BitOpE f a b) mem = do
      y <- eval b mem
      evalBin f x y
 
+eval (NotE a) mem = do
+     x <- eval a mem
+     return (if x /= 0 then 0 else 1)
+
 -- | Given a function and two expressions, evaluates the expressions and returns the result.
 subEval :: (Int -> Int -> Int) -> Expr -> Expr -> Memory -> Either Err Int
-subEval f a b mem = do
+subEval f a b mem = f <$> eval a mem <*> eval b mem
+
+-- | Given a function and two expressions, evaluates the expressions and returns the result.
+subEval' :: (Int -> Int -> Either Err Int) -> Expr -> Expr -> Memory -> Either Err Int
+subEval' f a b mem = do
      x <- eval a mem
      y <- eval b mem
-     return (f x y)
+     f x y
+
 
 -- | Given a function and two expressions, evaluates the expressions and returns the result.
 subEvalBin :: (Int -> Int -> Bool) -> Expr -> Expr -> Memory -> Either Err Int
@@ -163,20 +165,18 @@ subEvalBin f a b mem = do
      y <- eval b mem
      return (if f x y then 1 else 0)
 
+-- | Given a bitwise expression and two integers, the bitwise expressions are patterned match
+-- and evaluated accordingly.
 evalBin :: BitWise -> Int -> Int -> Either Err Int
---evalBin And a b = if a /= 0 && b /= 0 then Right 1 else Right 0
 evalBin And a b
     | a /= 0 && b /= 0 = Right 1
     | otherwise = Right 0
---evalBin Or a b = if a /= 0 || b /= 0 then Right 1 else Right 0
 evalBin Or a b
     | a /= 0 || b /= 0 = Right 1
     | otherwise = Right 0
---evalBin Xor a b = if (a /= 0 && b /= 0) || (a == b && b == 0) then Right 1 else Right 0
 evalBin Xor a b
     | (a /= 0 && b /= 0) || (a == b && b == 0) = Right 1
     | otherwise = Right 0
--- WRITE TESTS!!!!!!!!!!
 
 -- | This function ensures there is no accidental divide by zero error. The DivBZeroError is returned
 -- when this occurs, and the program handles it correctly.
@@ -186,8 +186,12 @@ safediv x y = Right $ x `div` y
 
 safemod :: Int -> Int -> Either Err Int
 safemod _ 0 = Left ModByZeroError
---safemod x y mem = mod <$> eval x mem <*> eval y mem
 safemod x y = Right $ x `mod` y
+
+safepow :: Int -> Int -> Either Err Int
+safepow x y 
+    | y < 0 = Left NegativeExponentError
+    | otherwise = Right (x ^ y)
 
 -- EXTENSION IDEAS
 -- RANDOM NUMBER GENERATOR

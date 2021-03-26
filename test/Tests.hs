@@ -181,6 +181,11 @@ tests = localOption (Timeout (5*1000000) "5s") $ testGroup "Interpreter.interpre
         === Right [("x", 1)]
         .&&. interpret [AssignStmt "x" (BitOpE Xor (ValE 0) (ValE 0))] []
         === Right [("x", 1)]
+    ,   QC.testProperty "correctly calculates not statement" $ \(x :: Int) ->
+        interpret [AssignStmt "x" (NotE (ValE 1))] []
+        === Right [("x", 0)]
+        .&&. interpret [AssignStmt "x" (NotE (ValE 0))] []
+        === Right [("x", 1)]
     ,   testCase "handles uninitialised memory in assignments" $
         interpret [AssignStmt "y" (VarE "x")] []
         @?= Left (UninitialisedMemory "x")

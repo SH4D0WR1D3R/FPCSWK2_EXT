@@ -196,6 +196,14 @@ parseControlIf e = do
     p <- parseNext e
     return $ IfStmt cond blk alts els : p
 
+parseControlWhile :: Parser Element Program
+parseControlWhile e = do
+    val <- force "Condition is required." $
+                value "BOOL" (elementNodes e)
+    stmt <- statement "DO" e
+    p <- parseNext e
+    return $ WhileStmt val stmt : p
+
 -- | Parses the body of an expression block.
 parseExprTy :: Text -> Parser Element Expr
 parseExprTy "math_number"     = parseMathNumber
@@ -211,6 +219,7 @@ parseStmtTy "entry_point"         = parseEntryPoint
 parseStmtTy "variables_set"       = parseVarSet
 parseStmtTy "controls_repeat_ext" = parseRepeat
 parseStmtTy "controls_if"         = parseControlIf
+parseStmtTy "controls_whileUntil" = parseControlWhile
 parseStmtTy ty = const $ throwE $
     "Unknown block type: " ++ unpack ty
 
